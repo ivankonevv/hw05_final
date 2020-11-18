@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Подписки{% endblock %}
+
+{% block content %}
+  <div class="container">
+    {% include "menu.html" with Follow=True %}
+    <h1>Актуальное среди Ваших подписок</h1>
+    <!-- Вывод ленты записей -->
+    {% for post in page %}
+     <!-- Вот он, новый include! -->
+      {% include "post_item.html" with post=post %}
+    {% endfor %}
+  </div>
+  <!-- Вывод паджинатора -->
+  {% if page.has_other_pages %}
+    {% include "paginator.html" with items=page paginator=paginator%}
+  {% endif %}
+
+{% endblock %}

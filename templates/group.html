@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+{% block title %}Записи сообщества {{ group.title }}{% endblock %}
+{% block header %}Записи сообщества {{ group.title }}{% endblock %}
+{% block content %}
+
+  <h1>{{ group.title }}</h1>
+  <p>{{ group.description }}</p>
+  <div class="col-md-9">
+      <!-- Начало блока с отдельным постом -->
+      {% for post in posts %}
+        {% include "post_item.html" with post=post %}
+      {% endfor %}
+      <!-- Конец блока с отдельным постом -->
+      <!-- Остальные посты -->
+      {% if page.has_other_pages %}
+        {% include "paginator.html" with items=page paginator=paginator%}
+      {% endif %}
+    </div>
+
+{% endblock %}
