@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Post, Group, Comment
+from .models import Post, Group, Comment, Follow
 
 
 class GroupAdmin(admin.ModelAdmin):
@@ -33,6 +33,13 @@ class CommentAdmin(admin.ModelAdmin):
     search_fields = ('text',)
 
 
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'author', 'user')
+    list_filter = ('author', 'user')
+
+
 admin.site.register(Post, PostAdmin)
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Comment, CommentAdmin)
+admin.site.register(Follow, FollowAdmin)
+

@@ -34,12 +34,10 @@
           <li class="list-group-item">
             {% if following %}
               <a class="btn btn-lg btn-light" href="{% url 'profile_unfollow' author %}" role="button">Отписаться</a>
+            {% elif author != user %}
+              <a class="btn btn-lg btn-primary" href="{% url 'profile_follow' author %}" role="button">Подписаться</a>
             {% else %}
-              {% if author != user %}
-                <a class="btn btn-lg btn-primary" href="{% url 'profile_follow' author %}" role="button">Подписаться</a>
-              {% else %}
-                {% block text %}На себя нельзя подписаться{% endblock %}
-              {% endif %}
+              {% block text %}На себя нельзя подписаться{% endblock %}
             {% endif %}
           </li>
         </ul>

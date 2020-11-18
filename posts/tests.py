@@ -83,8 +83,6 @@ class UrlsAndViewsTests(TestCase):
                         'slug': new_post_orm.group.slug,
                     }),
         )
-        new_post_orm.text = 'Текст поста был изменен'
-        new_post_orm.save()
         for url in urls:
             with self.subTest(url=url):
                 response = self.client.get(url)
@@ -128,6 +126,11 @@ class UrlsAndViewsTests(TestCase):
                     kwargs={
                         'username': self.user
                         }),
+            reverse('post',
+                    kwargs={
+                        'username': self.user,
+                        'post_id': self.new_group.id,
+                    }),
             reverse('group',
                     kwargs={
                         'slug': post.group.slug
@@ -135,7 +138,6 @@ class UrlsAndViewsTests(TestCase):
         )
         for url in urls:
             with self.subTest(url=url):
-                posts = Post.objects.all()
                 response = self.client.get(url)
                 response_unauthorized = self.anonym.get(url)
                 paginator = response.context.get('paginator')
@@ -171,19 +173,13 @@ class UrlsAndViewsTests(TestCase):
             'Retry option is impossible. The PostForm is broken')
 
     def test_cash(self):
-        post_text = 'Проверяем работу кэш'
-        index_url = reverse('index')
-        self.anonym.get(index_url)
-        post = Post.objects.create(
-            author=self.user,
-            text=post_text,
-            group=self.new_group
-        )
-        response = self.anonym.get(index_url)
-        self.assertNotIn(post_text, response.content.decode('UTF-8'))
+        first = self.anonym.get(reverse('index'))
+        Post.objects.create(text='Cache check', author=self.user)
+        second = self.anonym.get(reverse('index'))
         cache.clear()
-        response = self.anonym.get(index_url)
-        self.assertEqual(post_text, response.context['page'].object_list[0].text)
+        third = self.anonym.get(reverse('index'))
+        self.assertEqual(first.content, second.content)
+        self.assertNotEqual(second.content, third.content)
 
     def test_auth_comment(self):
         post1 = Post.objects.create(
@@ -204,11 +200,11 @@ class UrlsAndViewsTests(TestCase):
     def test_view_post_with_follow(self):
         self.client.get(reverse(
             'profile_follow', kwargs={'username': self.second_user.username}))
-        self.second_client.post(
-            reverse('new_post'),
-            {'text': 'Это текст публикации второго пользователя',
-             'group': self.new_group.id},
-            follow=True)
+        Post.objects.create(
+            text='Это текст публикации второго пользователя',
+            author=self.second_user,
+            group=self.new_group,
+        )
         response = self.client.get(reverse('follow_index'))
         self.assertContains(
             response, 'Это текст публикации второго пользователя')
@@ -216,14 +212,13 @@ class UrlsAndViewsTests(TestCase):
     def test_followed_authors_post_appears_in_follow_list(self):
         test_post = Post.objects.create(
             text='Новый Текст', author=self.second_user)
+        Follow.objects.get_or_create(author=self.second_user,
+                                     user=self.user)
         with self.subTest(
                 msg='Check followed author post at follow_index page'):
-            Follow.objects.get_or_create(
-                author=self.second_user, user=self.user)
             response = self.client.get(reverse('follow_index'))
             self.assertIn(
-                test_post.text,
-                [post.text for post in response.context['page']])
+                test_post, response.context['page'])
         with self.subTest(
                 msg='Check unfollowed author post at follow_index page'):
             Follow.objects.filter(
@@ -231,5 +226,12 @@ class UrlsAndViewsTests(TestCase):
                 user=self.user).delete()
             response = self.client.get(reverse('follow_index'))
             self.assertNotIn(
-                test_post.text,
-                [post.text for post in response.context['page']])
+                test_post, response.context['page'])
+
+    def unfollow_test(self):
+        with self.subTest(msg='Unfollow'):
+            self.client.get(
+                reverse('profile_unfollow', args=[self.second_user.username]))
+            self.assertFalse(
+                Follow.objects.filter(author=self.second_user,
+                                      user=self.user).exists())
