@@ -27,12 +27,6 @@ class Group(models.Model):
 
 
 class Post(models.Model):
-    title = models.CharField(
-        max_length=200,
-        verbose_name='Название поста',
-        help_text='Назовите пост',
-        null=False,
-    )
     text = models.TextField(
         verbose_name='Текст вашего поста',
     )
@@ -70,10 +64,7 @@ class Post(models.Model):
         verbose_name_plural = 'Посты'
 
     def __str__(self):
-        post_title = self.title
-        post_pub_date = self.pub_date
-        post_author = self.author
-        return f'"{post_title}", Автор: {post_author} от {post_pub_date:%d.%m.%Y}.'
+        return f'Автор: {self.author} от {self.pub_date:%d.%m.%Y}.'
 
 
 class Comment(models.Model):

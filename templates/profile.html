@@ -37,7 +37,7 @@
             {% elif author != user %}
               <a class="btn btn-lg btn-primary" href="{% url 'profile_follow' author %}" role="button">Подписаться</a>
             {% else %}
-              {% block text %}На себя нельзя подписаться{% endblock %}
+              <a class="btn btn-lg btn-primary" role="button">Подписаться</a>
             {% endif %}
           </li>
         </ul>

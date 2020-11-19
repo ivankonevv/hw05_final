@@ -200,20 +200,15 @@ class UrlsAndViewsTests(TestCase):
     def test_view_post_with_follow(self):
         self.client.get(reverse(
             'profile_follow', kwargs={'username': self.second_user.username}))
-        Post.objects.create(
-            text='Это текст публикации второго пользователя',
-            author=self.second_user,
-            group=self.new_group,
-        )
-        response = self.client.get(reverse('follow_index'))
-        self.assertContains(
-            response, 'Это текст публикации второго пользователя')
+        self.assertTrue(
+            Follow.objects.filter(author=self.second_user,
+                                  user=self.user).exists())
 
     def test_followed_authors_post_appears_in_follow_list(self):
         test_post = Post.objects.create(
             text='Новый Текст', author=self.second_user)
-        Follow.objects.get_or_create(author=self.second_user,
-                                     user=self.user)
+        Follow.objects.create(author=self.second_user,
+                              user=self.user)
         with self.subTest(
                 msg='Check followed author post at follow_index page'):
             response = self.client.get(reverse('follow_index'))
@@ -229,9 +224,8 @@ class UrlsAndViewsTests(TestCase):
                 test_post, response.context['page'])
 
     def unfollow_test(self):
-        with self.subTest(msg='Unfollow'):
-            self.client.get(
-                reverse('profile_unfollow', args=[self.second_user.username]))
-            self.assertFalse(
-                Follow.objects.filter(author=self.second_user,
-                                      user=self.user).exists())
+        self.client.get(
+            reverse('profile_unfollow', args=[self.second_user.username]))
+        self.assertFalse(
+            Follow.objects.filter(author=self.second_user,
+                                  user=self.user).exists())
