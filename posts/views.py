@@ -1,14 +1,17 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
 
-from .forms import PostForm, CommentForm
-from .models import Post, Group, User, Follow
+from .forms import CommentForm, PostForm
+from .models import Follow, Group, Post, User
 
 
 @cache_page(1 * 20, key_prefix="index_page")
 def index(request):
+    """
+    Главная страница(index).
+    """
     post_list = Post.objects.all()
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
@@ -21,6 +24,9 @@ def index(request):
 
 
 def group_posts(request, slug):
+    """
+    Страница всех постов группы.
+    """
     group = get_object_or_404(
         Group,
         slug=slug,
@@ -41,6 +47,9 @@ def group_posts(request, slug):
 
 @login_required
 def new_post(request):
+    """
+    Страница создания нового поста.
+    """
     form = PostForm(request.POST or None, files=request.FILES or None)
     if not form.is_valid():
         return render(request, 'new.html', {'form': form})
@@ -51,6 +60,9 @@ def new_post(request):
     
     
 def profile(request, username):
+    """
+    Страница просмотра профиля пользователя.
+    """
     author = get_object_or_404(User, username=username)
     post_list = author.posts.all()
     paginator = Paginator(post_list, 10)
@@ -67,6 +79,9 @@ def profile(request, username):
 
 
 def post_view(request, username, post_id):
+    """
+    Отдельная страница просмотра поста.
+    """
     post = get_object_or_404(Post, pk=post_id, author__username=username)
     form = CommentForm()
     comments = post.comments.all()
@@ -81,6 +96,9 @@ def post_view(request, username, post_id):
 
 @login_required
 def post_edit(request, username, post_id):
+    """
+    Редактирование поста.
+    """
     post = get_object_or_404(Post, author__username=username, pk=post_id)
     if post.author != request.user:
         return redirect('post',
@@ -117,6 +135,9 @@ def server_error(request):
 
 @login_required
 def add_comment(request, username, post_id):
+    """
+    Создание комментария к посту.
+    """
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm(request.POST or None)
     if form.is_valid():
@@ -132,6 +153,9 @@ def add_comment(request, username, post_id):
 
 @login_required
 def follow_index(request):
+    """
+    Страница с постами избранных авторов.
+    """
     posts = Post.objects.filter(author__following__user=request.user)
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
@@ -145,6 +169,9 @@ def follow_index(request):
 
 @login_required
 def profile_follow(request, username):
+    """
+    Подписка на профиль пользователя.
+    """
     author = get_object_or_404(User, username=username)
     following = author.following.exists()
     if request.user != author and not following:
@@ -154,6 +181,9 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
+    """
+    Отписка от профиля пользователя.
+    """
     author = get_object_or_404(User, username=username)
     get_object_or_404(Follow, user=request.user, author=author).delete()
     return redirect('profile', username=username)

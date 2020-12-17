@@ -1,10 +1,9 @@
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.cache import cache
-from django.test import TestCase, Client
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase
 from django.urls import reverse
 
-
-from posts.models import Post, Group, User, Follow
+from posts.models import Follow, Group, Post, User
 
 
 class UrlsAndViewsTests(TestCase):
@@ -22,10 +21,16 @@ class UrlsAndViewsTests(TestCase):
                                               )
 
     def test_homepage(self):
+        """
+        Тест на отображение главной страницы (index).
+        """
         response = self.anonym.get(reverse('index'))
         self.assertEqual(response.status_code, 200)
 
     def test_unauthorized_user_new_page(self):
+        """
+        Тест на создание нового поста неавторизованным пользователем.
+        """
         response = self.anonym.get(reverse('new_post'), follow=False)
         self.assertRedirects(response,
                              reverse('login') + '?next=' +
@@ -33,6 +38,9 @@ class UrlsAndViewsTests(TestCase):
                              status_code=302, target_status_code=200)
 
     def test_new_post(self):
+        """
+        Тест на корректное создание нового поста.
+        """
         cache.clear()
         new_group = self.new_group
         count = Post.objects.count()
@@ -52,6 +60,9 @@ class UrlsAndViewsTests(TestCase):
                          'Текст не соответсвтует созданному в запросе.')
 
     def test_new_profile_page_view(self):
+        """
+        Тест на наличие профиля в базе после регистрации.
+        """
         response = self.anonym.get(reverse('profile',
                                    kwargs={'username': self.user}))
         self.assertEqual(
@@ -61,6 +72,10 @@ class UrlsAndViewsTests(TestCase):
         )
 
     def test_show_post(self):
+        """
+        Тест на отображение поста после создания на главной странице,
+        странице профиля, поста и в группе.
+        """
         cache.clear()
         new_post_orm = Post.objects.create(
             text='Это текст публикации',
@@ -98,10 +113,16 @@ class UrlsAndViewsTests(TestCase):
                 self.assertEqual(post.group, new_post_orm.group)
     
     def test_404(self):
+        """
+        Тест на отображение страницы с ошибкой 404.
+        """
         response = self.client.get(reverse('404'))
         self.assertEqual(response.status_code, 404)
 
     def test_post_form_img_file(self):
+        """
+        Теста на создание поста с .img-файлом.
+        """
         cache.clear()
         small_gif = (
             b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04"
@@ -148,10 +169,10 @@ class UrlsAndViewsTests(TestCase):
                 self.assertContains(response, '<img', status_code=200)
 
     def test_post_form_txt_file(self):
+        """
+        Тест на создание поста с .txt-файлом.
+        """
         cache.clear()
-        """
-        Testing create post form with txt file
-        """
         post_text = 'Текст'
         response = self.client.post(
             reverse('new_post'),
@@ -173,6 +194,9 @@ class UrlsAndViewsTests(TestCase):
             'Retry option is impossible. The PostForm is broken')
 
     def test_cash(self):
+        """
+        Тест кэширования главной страницы(index).
+        """
         first = self.anonym.get(reverse('index'))
         Post.objects.create(text='Cache check', author=self.user)
         second = self.anonym.get(reverse('index'))
@@ -182,6 +206,9 @@ class UrlsAndViewsTests(TestCase):
         self.assertNotEqual(second.content, third.content)
 
     def test_auth_comment(self):
+        """
+        Тест на создание комментария авторизованным польозвателем.
+        """
         post1 = Post.objects.create(
             text='Пост1',
             author=self.user,
@@ -198,6 +225,9 @@ class UrlsAndViewsTests(TestCase):
         )
 
     def test_view_post_with_follow(self):
+        """
+        Тест на отображение поста с подпиской на пользователя.
+        """
         self.client.get(reverse(
             'profile_follow', kwargs={'username': self.second_user.username}))
         self.assertTrue(
@@ -205,6 +235,10 @@ class UrlsAndViewsTests(TestCase):
                                   user=self.user).exists())
 
     def test_followed_authors_post_appears_in_follow_list(self):
+        """
+        Тест на появление нового поста у пользователя,
+        находящегося в подписках.
+        """
         test_post = Post.objects.create(
             text='Новый Текст', author=self.second_user)
         Follow.objects.create(author=self.second_user,
@@ -223,7 +257,10 @@ class UrlsAndViewsTests(TestCase):
             self.assertNotIn(
                 test_post, response.context['page'])
 
-    def unfollow_test(self):
+    def test_unfollow(self):
+        """
+        Тест на отписку от пользователя.
+        """
         self.client.get(
             reverse('profile_unfollow', args=[self.second_user.username]))
         self.assertFalse(
